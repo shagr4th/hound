@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/etsy/hound/codesearch/index"
