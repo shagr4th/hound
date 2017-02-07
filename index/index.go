@@ -228,6 +228,25 @@ func (n *Index) Search(pat string, opt *SearchOptions) (*SearchResponse, error) 
 }
 
 func isTextFile(filename string) (bool, error) {
+	if strings.HasSuffix(strings.ToLower(filename), ".pas") ||
+		strings.HasSuffix(strings.ToLower(filename), ".dfm") ||
+		strings.HasSuffix(strings.ToLower(filename), ".dpr") ||
+		strings.HasSuffix(strings.ToLower(filename), ".txt") ||
+		strings.HasSuffix(strings.ToLower(filename), ".vb") ||
+		strings.HasSuffix(strings.ToLower(filename), ".java") ||
+		strings.HasSuffix(strings.ToLower(filename), ".properties") ||
+		strings.HasSuffix(strings.ToLower(filename), ".xml") ||
+		strings.HasSuffix(strings.ToLower(filename), ".js") ||
+		strings.HasSuffix(strings.ToLower(filename), ".ts") ||
+		strings.HasSuffix(strings.ToLower(filename), ".jsp") ||
+		strings.HasSuffix(strings.ToLower(filename), ".asp") ||
+		strings.HasSuffix(strings.ToLower(filename), ".aspx") ||
+		strings.HasSuffix(strings.ToLower(filename), ".jsp") ||
+		strings.HasSuffix(strings.ToLower(filename), ".cbl") ||
+		strings.HasSuffix(strings.ToLower(filename), ".sql") {
+		return true, nil
+	}
+	
 	buf := make([]byte, filePeekSize)
 	r, err := os.Open(filename)
 	if err != nil {
