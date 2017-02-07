@@ -34,7 +34,7 @@ go get github.com/etsy/hound/cmds/...
 
 2. Run 
 ```
-docker run -d -p 6080:6080 --name hound -v $(pwd):/data etsy/hound
+docker run -d -p 6080:6080 --name hound -v $(pwd):/data shagr4th/hound
 ```
 
 You should be able to navigate to [http://localhost:6080/](http://localhost:6080/) as usual.
