@@ -242,9 +242,10 @@ func isTextFile(filename string) (bool, error) {
 		strings.HasSuffix(strings.ToLower(filename), ".jsp") ||
 		strings.HasSuffix(strings.ToLower(filename), ".asp") ||
 		strings.HasSuffix(strings.ToLower(filename), ".aspx") ||
-		strings.HasSuffix(strings.ToLower(filename), ".jsp") ||
+		strings.HasSuffix(strings.ToLower(filename), ".cs") ||
 		strings.HasSuffix(strings.ToLower(filename), ".cbl") ||
-		strings.HasSuffix(strings.ToLower(filename), ".sql") {
+		strings.HasSuffix(strings.ToLower(filename), ".sql") ||
+		strings.HasSuffix(strings.ToLower(filename), ".html")  {
 		return true, nil
 	}
 	
