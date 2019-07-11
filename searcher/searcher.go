@@ -10,13 +10,12 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/etsy/hound/config"
-	"github.com/etsy/hound/index"
-	"github.com/etsy/hound/vcs"
+	"github.com/hound-search/hound/config"
+	"github.com/hound-search/hound/index"
+	"github.com/hound-search/hound/vcs"
 )
 
 type Searcher struct {
@@ -33,6 +32,15 @@ type Searcher struct {
 	shutdownRequested bool
 	shutdownCh        chan empty
 	doneCh            chan empty
+}
+
+// Struct used to send the results from newSearcherConcurrent function.
+// This struct can either have a non-nil searcher or a non-nil error
+// depending on what newSearcher function returns.
+type searcherResult struct {
+	name     string
+	searcher *Searcher
+	err      error
 }
 
 type empty struct{}
@@ -267,10 +275,6 @@ func init() {
 // occurred and no other return values are valid. If an error occurs that is specific
 // to a particular searcher, that searcher will not be present in the searcher map and
 // will have an error entry in the error map.
-//
-// NOTE: The keys in the searcher map will be normalized to lower case, but not such
-// transformation will be done on the error map to make it easier to match those errors
-// back to the original repo name.
 func MakeAll(cfg *config.Config) (map[string]*Searcher, map[string]error, error) {
 	errs := map[string]error{}
 	searchers := map[string]*Searcher{}
@@ -282,15 +286,25 @@ func MakeAll(cfg *config.Config) (map[string]*Searcher, map[string]error, error)
 
 	lim := makeLimiter(cfg.MaxConcurrentIndexers)
 
+	n := len(cfg.Repos)
+	// Channel to receive the results from newSearcherConcurrent function.
+	resultCh := make(chan searcherResult, n)
+
+	// Start new searchers for all repos in different go routines while
+	// respecting cfg.MaxConcurrentIndexers.
 	for name, repo := range cfg.Repos {
-		s, err := newSearcher(cfg.DbPath, name, repo, refs, lim)
-		if err != nil {
-			log.Print(err)
-			errs[name] = err
+		go newSearcherConcurrent(cfg.DbPath, name, repo, refs, lim, resultCh)
+	}
+
+	// Collect the results on resultCh channel for all repos.
+	for i := 0; i < n; i++ {
+		r := <-resultCh
+		if r.err != nil {
+			log.Print(r.err)
+			errs[r.name] = r.err
 			continue
 		}
-
-		searchers[strings.ToLower(name)] = s
+		searchers[r.name] = r.searcher
 	}
 
 	if err := refs.removeUnclaimed(); err != nil {
@@ -468,4 +482,33 @@ func newSearcher(
 	}()
 
 	return s, nil
+}
+
+// This function is a wrapper around `newSearcher` function.
+// It respects the parameter `cfg.MaxConcurrentIndexers` while making the
+// creation of searchers for various repositories concurrent.
+func newSearcherConcurrent(
+	dbpath, name string,
+	repo *config.Repo,
+	refs *foundRefs,
+	lim limiter,
+	resultCh chan searcherResult) {
+
+	// acquire a token from the rate limiter
+	lim.Acquire()
+	defer lim.Release()
+
+	s, err := newSearcher(dbpath, name, repo, refs, lim)
+	if err != nil {
+		resultCh <- searcherResult{
+			name: name,
+			err:  err,
+		}
+		return
+	}
+
+	resultCh <- searcherResult{
+		name:     name,
+		searcher: s,
+	}
 }

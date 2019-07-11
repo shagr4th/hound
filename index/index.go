@@ -13,8 +13,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/etsy/hound/codesearch/index"
-	"github.com/etsy/hound/codesearch/regexp"
+	"github.com/hound-search/hound/codesearch/index"
+	"github.com/hound-search/hound/codesearch/regexp"
 )
 
 const (
